@@ -1,0 +1,48 @@
+Reader thread
+
+readEntriesFromFile(batchSize) {
+    for(1 -> batchSize) {
+        // read from file
+        element = readFromFile();
+        // check for null 
+        if (element != null) {
+            IOQueue.put(element)
+        } else {
+            // no more lines are left in file
+            moreLinesAreLeftInFile = false
+            return;
+        }
+    }
+}
+
+run () {
+    /* since the reader is batch reading the 
+    * file we have to keep track of 
+    * when the file ends hence we start with
+    * more moreLinesAreLeftInFile as true 
+    */
+
+    while (moreLinesAreLeftInFile) {
+
+        // check if any thread has encountered null in queue
+        // since threads accessing a LBQ, will just wait when the queue
+        // is empty, the reader takes the job of monitoring the queue size
+        // so as to when it becomes empty, hence the first condition.
+
+        // can also be when x% of IOQueue is consumed ( assuming x = 100 )
+        // TODO - how do you decide x ?
+        if (IOQueue.size() == 0) {
+
+            // reads batchSize number of entries
+            // from file and sets moreLinesAreLeftInFile t
+            // false if no files are left
+            readEntriesFromFile (batchSize)
+
+            // set toBeFilled to false
+            toBeFilled.set(false)
+
+        }
+
+    }
+
+}

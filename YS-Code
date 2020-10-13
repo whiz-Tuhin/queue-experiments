@@ -1,0 +1,85 @@
+Reader thread (Producer)
+
+ 
+
+Boolean moreLinesAreLeftInFile
+Object producer, consumer, lock
+
+ 
+
+boolean readEntriesFromFile(batchSize) {
+    for(1 -> batchSize) {
+        element = readFromFile();
+        if (element != null) {
+            IOQueue.offer(element)
+        } else {
+        synchronized(moreLinesAreLeftInFile){
+            moreLinesAreLeftInFile = false
+        }
+            return false;
+        }
+    }
+    return true;
+}
+
+ 
+
+run () {
+    while (true) {
+
+ ==> contention point
+
+    lock.acquire()
+        boolean hasMore = readEntriesFromFile (batchSize)
+
+    synchronized(consumer){
+        consumer.notifyAll()
+    }
+            
+    if(!hasMore) {
+        lock.release()
+        return;
+    }
+    synchronized(producer){
+        lock.release()
+        producer.wait()
+    }
+    }
+}
+ 
+================================
+ 
+
+Partition Threads (Consumer)
+
+ 
+
+Boolean moreLinesAreLeftInFile
+Object producer, consumer
+
+ 
+
+run () {
+    while (true) {
+        Edge edge = IOQueue.poll()
+        if (edge is not null) {
+            decidePartition()
+        } else {
+        synchronized(moreLinesAreLeftInFile){
+            if(!moreLinesAreLeftInFile) break;
+        }
+
+ 
+==> contention point
+        lock.acquire()
+        if(!IOQueue.isEmpty()) { lock.release(); continue; }
+        synchronized(producer){
+            producer.notify()
+        }
+        synchronized(consumer){
+            lock.release()
+            consumer.wait()
+        }
+        }
+    }
+}

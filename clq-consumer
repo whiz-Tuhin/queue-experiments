@@ -1,0 +1,44 @@
+// CLQ Partition
+
+Partition Threads
+
+// owns the objects monitor and waits until
+// notify
+waitForQueueToFill() {
+    synchronized(toBeFilled) {
+        toBeFilled.wait()
+    }
+}
+
+run () {
+    /* since all edges have to be processed
+    * each thread shares an !! - AtomicLong - !! edgeCountDown
+    * which is decremented upon processing of each edge
+    * hence each thread should run until the edgeCountDown
+    * reaches to 0 */
+
+    while (edgeCountDown does not reach zero) {
+        // take an element from the queue
+        Edge edge = IOQueue.poll()
+
+        /* since concurrentLinkedQueue
+        * is wait free it returns a null
+        * when queue is empty and thread
+        * tries to access it */
+
+        if (edge is not null) {
+            // makes thread sleep for DECISION_TIME
+            decidePartition ()
+
+            decrement(edgeCountDown)
+        } else {
+            // encounters a null element -> queue empty
+            // signal reader to read next batch
+
+            // set toBeFilled to true
+            toBeFilled = true;
+            waitForQueueToFill()
+        }
+
+    }
+}
